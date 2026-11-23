@@ -1,6 +1,7 @@
 # Blueprint Index
 
 ## Blueprint Sections
+
 - [docs/blueprint/01-product.md](file:///c:/Users/ARNAV/Documents/College/MMP-finale/MMP-Finale/docs/blueprint/01-product.md): Section 1 – Product definition, overview, problem statement, key flows, non-goals, and boundary conditions.
 - [docs/blueprint/02-features.md](file:///c:/Users/ARNAV/Documents/College/MMP-finale/MMP-Finale/docs/blueprint/02-features.md): Section 2 – Feature breakdown for SafeRoute (2A), AutoMate (2B), JourneyGuard (2C), and SafeAlert (2D).
 - [docs/blueprint/03-roles.md](file:///c:/Users/ARNAV/Documents/College/MMP-finale/MMP-Finale/docs/blueprint/03-roles.md): Section 3 – User roles (USER, MODERATOR, ADMIN) and detailed RBAC permission matrix.
@@ -16,38 +17,38 @@
 
 ## Screen Index (S1–S33)
 
-| Screen ID | Screen Name & Route | Module |
-|---|---|---|
-| S1 | Landing page (`/`) | Public & Auth |
-| S2 | Login / Register (`/login`) | Public & Auth |
-| S3 | OTP verification (`/verify`) | Public & Auth |
-| S4 | Onboarding / Profile setup (`/welcome`) | Public & Auth |
-| S5 | Dashboard (`/dashboard`) | Dashboard |
-| S6 | Report list/map (`/saferoute`) | SafeRoute |
-| S7 | New report (`/saferoute/new`) | SafeRoute |
-| S8 | Report detail (`/saferoute/[id]`) | SafeRoute |
-| S9 | My reports (`/saferoute/mine`) | SafeRoute |
-| S10 | Browse rides (`/automate`) | AutoMate |
-| S11 | Create ride (`/automate/new`) | AutoMate |
-| S12 | Ride detail (`/automate/[id]`) | AutoMate |
-| S13 | My rides (`/automate/mine`) | AutoMate |
-| S14 | Ride chat (`/automate/[id]/chat`) [OPT] | AutoMate |
-| S15 | JourneyGuard home (`/journeyguard`) | JourneyGuard |
-| S16 | Start journey (`/journeyguard/new`) | JourneyGuard |
-| S17 | Active journey detail (`/journeyguard/[id]`) | JourneyGuard |
-| S18 | Journey history (`/journeyguard/history`) | JourneyGuard |
-| S19 | Emergency contacts (`/journeyguard/contacts`) | JourneyGuard |
-| S20 | Trusted-contact status page (`/track/[token]`) | JourneyGuard |
-| S21 | Alerts feed (`/safealert`) | SafeAlert |
-| S22 | New alert (`/safealert/new`) | SafeAlert |
-| S23 | Alert detail (`/safealert/[id]`) | SafeAlert |
-| S24 | Alert preferences (`/settings` tab) | SafeAlert |
-| S25 | Notification centre (`/notifications`) | Core / Account |
-| S26 | Profile (`/profile`) | Core / Account |
-| S27 | Settings (`/settings`) | Core / Account |
-| S28 | Admin overview (`/admin`) | Admin / Moderation |
-| S29 | Moderation queue (`/admin/moderation`) | Admin / Moderation |
-| S30 | Flags (`/admin/flags`) | Admin / Moderation |
-| S31 | User management (`/admin/users`) | Admin / Moderation |
-| S32 | Audit log (`/admin/audit`) | Admin / Moderation |
-| S33 | System settings (`/admin/settings`) | Admin / Moderation |
+| Screen ID | Screen Name & Route                            | Module             |
+| --------- | ---------------------------------------------- | ------------------ |
+| S1        | Landing page (`/`)                             | Public & Auth      |
+| S2        | Login / Register (`/login`)                    | Public & Auth      |
+| S3        | OTP verification (`/verify`)                   | Public & Auth      |
+| S4        | Onboarding / Profile setup (`/welcome`)        | Public & Auth      |
+| S5        | Dashboard (`/dashboard`)                       | Dashboard          |
+| S6        | Report list/map (`/saferoute`)                 | SafeRoute          |
+| S7        | New report (`/saferoute/new`)                  | SafeRoute          |
+| S8        | Report detail (`/saferoute/[id]`)              | SafeRoute          |
+| S9        | My reports (`/saferoute/mine`)                 | SafeRoute          |
+| S10       | Browse rides (`/automate`)                     | AutoMate           |
+| S11       | Create ride (`/automate/new`)                  | AutoMate           |
+| S12       | Ride detail (`/automate/[id]`)                 | AutoMate           |
+| S13       | My rides (`/automate/mine`)                    | AutoMate           |
+| S14       | Ride chat (`/automate/[id]/chat`) [OPT]        | AutoMate           |
+| S15       | JourneyGuard home (`/journeyguard`)            | JourneyGuard       |
+| S16       | Start journey (`/journeyguard/new`)            | JourneyGuard       |
+| S17       | Active journey detail (`/journeyguard/[id]`)   | JourneyGuard       |
+| S18       | Journey history (`/journeyguard/history`)      | JourneyGuard       |
+| S19       | Emergency contacts (`/journeyguard/contacts`)  | JourneyGuard       |
+| S20       | Trusted-contact status page (`/track/[token]`) | JourneyGuard       |
+| S21       | Alerts feed (`/safealert`)                     | SafeAlert          |
+| S22       | New alert (`/safealert/new`)                   | SafeAlert          |
+| S23       | Alert detail (`/safealert/[id]`)               | SafeAlert          |
+| S24       | Alert preferences (`/settings` tab)            | SafeAlert          |
+| S25       | Notification centre (`/notifications`)         | Core / Account     |
+| S26       | Profile (`/profile`)                           | Core / Account     |
+| S27       | Settings (`/settings`)                         | Core / Account     |
+| S28       | Admin overview (`/admin`)                      | Admin / Moderation |
+| S29       | Moderation queue (`/admin/moderation`)         | Admin / Moderation |
+| S30       | Flags (`/admin/flags`)                         | Admin / Moderation |
+| S31       | User management (`/admin/users`)               | Admin / Moderation |
+| S32       | Audit log (`/admin/audit`)                     | Admin / Moderation |
+| S33       | System settings (`/admin/settings`)            | Admin / Moderation |

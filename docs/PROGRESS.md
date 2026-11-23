@@ -1,14 +1,15 @@
 # Progress
 
 ## Done
-- Initialized git repository, .gitignore, and .env.example
-- Split docs/BLUEPRINT.md into docs/blueprint/ (01-12) verbatim
-- Removed monolithic docs/BLUEPRINT.md
-- Created docs/INDEX.md and docs/PROGRESS.md
+
+- Monorepo + pnpm workspaces (apps/web, apps/api, packages/shared)
+- Prisma schema migrated with Section 06 tables, enums, indexes, raw SQL CHECKs
+- API skeleton with middleware, health route, Vitest suite, and green CI
 
 ## Next
-- Set up monorepo workspace structure (apps/web, apps/api, packages/shared)
-- Configure root dependencies and tooling
+
+- Auth & profiles (OTP request/verify, Resend email templates, DB sessions)
 
 ## Known Issues
+
 - None

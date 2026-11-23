@@ -1,0 +1,563 @@
+// Prisma schema — SaferStreets (Section 6)
+// DB: PostgreSQL | UUIDs via gen_random_uuid() | Enums from Section 6.1
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum ReportCategory {
+  BROKEN_STREETLIGHT
+  POOR_LIGHTING
+  POTHOLE
+  DAMAGED_ROAD
+  DAMAGED_FOOTPATH
+  ISOLATED_AREA
+  OTHER
+}
+
+enum ReportStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  VERIFIED
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum RideStatus {
+  OPEN
+  FULL
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum RideRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum JourneyStatus {
+  ACTIVE
+  OVERDUE
+  COMPLETED
+  CANCELLED
+}
+
+enum JourneyEventType {
+  STARTED
+  EXTENDED
+  REMINDER_SENT
+  CONTACT_NOTIFIED
+  COMPLETED
+  CANCELLED
+}
+
+enum AlertCategory {
+  ROAD_ACCIDENT
+  MEDICAL
+  HARASSMENT
+  FIRE
+  PUBLIC_HAZARD
+  OTHER
+}
+
+enum AlertStatus {
+  ACTIVE
+  VERIFIED
+  RESOLVED
+  DISMISSED
+  EXPIRED
+  REMOVED
+}
+
+enum AlertVote {
+  CONFIRM
+  DISPUTE
+}
+
+enum NotificationType {
+  REPORT_STATUS
+  REPORT_CONFIRMED
+  RIDE_REQUEST
+  RIDE_DECISION
+  RIDE_UPDATE
+  RIDE_MESSAGE
+  JOURNEY_REMINDER
+  JOURNEY_OVERDUE
+  ALERT_NEARBY
+  ALERT_UPDATE
+  MODERATION
+  SYSTEM
+}
+
+enum FlagTargetType {
+  REPORT
+  RIDE
+  ALERT
+  USER
+  RIDE_MESSAGE
+}
+
+enum FlagStatus {
+  OPEN
+  ACTIONED
+  DISMISSED
+}
+
+enum ModerationActionType {
+  VERIFY
+  REJECT
+  REMOVE
+  SUSPEND
+  BAN
+  RESTORE
+  ROLE_CHANGE
+  STRIKE
+  WARN
+  RESOLVE
+  DISMISS
+}
+
+// ─── Tables ────────────────────────────────────────────────────────────────────
+
+model User {
+  id                   String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                String     @unique @db.Citext
+  emailVerifiedAt      DateTime?  @map("email_verified_at") @db.Timestamptz
+  fullName             String?    @map("full_name") @db.VarChar(60)
+  phone                String?    @db.VarChar(15)
+  avatarUrl            String?    @map("avatar_url")
+  role                 UserRole   @default(USER)
+  status               UserStatus @default(ACTIVE)
+  termsAcceptedAt      DateTime?  @map("terms_accepted_at") @db.Timestamptz
+  /// CHECK (strike_count >= 0) enforced via migration raw SQL
+  strikeCount          Int        @default(0) @map("strike_count")
+  alertsSuspendedUntil DateTime?  @map("alerts_suspended_until") @db.Timestamptz
+  /// jsonb: notification and privacy preferences
+  prefs                Json?
+  lastLoginAt          DateTime?  @map("last_login_at") @db.Timestamptz
+  createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt            DateTime?  @map("deleted_at") @db.Timestamptz
+
+  sessions             Session[]
+  emergencyContacts    EmergencyContact[]
+  reports              Report[]
+  reportConfirmations  ReportConfirmation[]
+  reportStatusHistory  ReportStatusHistory[]
+  rides                Ride[]
+  rideRequests         RideRequest[]
+  rideParticipants     RideParticipant[]
+  rideMessages         RideMessage[]
+  journeys             Journey[]
+  alerts               Alert[]
+  alertVotes           AlertVote_[]
+  alertSubscription    AlertSubscription?
+  notifications        Notification[]
+  flags                Flag[]
+  moderationActions    ModerationAction[]
+  verifiedAlerts       Alert[]              @relation("VerifiedBy")
+
+  @@map("users")
+}
+
+model OtpCode {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String    @db.Citext
+  codeHash    String    @map("code_hash")
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz
+  /// number of verification attempts
+  attempts    Int       @default(0)
+  consumedAt  DateTime? @map("consumed_at") @db.Timestamptz
+  ip          String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([email, createdAt(sort: Desc)])
+  @@map("otp_codes")
+}
+
+model Session {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  tokenHash   String    @unique @map("token_hash")
+  userAgent   String?   @map("user_agent")
+  ip          String?
+  expiresAt   DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model EmergencyContact {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  name             String    @db.VarChar(60)
+  relationship     String    @db.VarChar(40)
+  email            String    @db.Citext
+  phone            String?   @db.VarChar(15)
+  consentConfirmed Boolean   @map("consent_confirmed")
+  unsubscribedAt   DateTime? @map("unsubscribed_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journeys Journey[]
+
+  @@unique([userId, email])
+  @@map("emergency_contacts")
+}
+
+model Report {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId          String         @map("author_id") @db.Uuid
+  category          ReportCategory
+  title             String         @db.VarChar(80)
+  description       String
+  /// CHECK (latitude BETWEEN -90 AND 90)
+  latitude          Decimal        @db.Decimal(9, 6)
+  /// CHECK (longitude BETWEEN -180 AND 180)
+  longitude         Decimal        @db.Decimal(9, 6)
+  addressText       String?        @map("address_text")
+  status            ReportStatus   @default(SUBMITTED)
+  confirmationCount Int            @default(0) @map("confirmation_count")
+  moderatorNote     String?        @map("moderator_note")
+  resolvedAt        DateTime?      @map("resolved_at") @db.Timestamptz
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime?      @map("deleted_at") @db.Timestamptz
+
+  author        User                  @relation(fields: [authorId], references: [id])
+  photos        ReportPhoto[]
+  confirmations ReportConfirmation[]
+  statusHistory ReportStatusHistory[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([category])
+  @@index([latitude, longitude])
+  @@index([authorId])
+  @@map("reports")
+}
+
+model ReportPhoto {
+  id         String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId   String  @map("report_id") @db.Uuid
+  url        String
+  storageKey String  @map("storage_key")
+  width      Int?
+  height     Int?
+  position   Int     @default(0)
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("report_photos")
+}
+
+model ReportConfirmation {
+  reportId  String   @map("report_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([reportId, userId])
+  @@map("report_confirmations")
+}
+
+model ReportStatusHistory {
+  id         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reportId   String       @map("report_id") @db.Uuid
+  fromStatus ReportStatus @map("from_status")
+  toStatus   ReportStatus @map("to_status")
+  changedBy  String       @map("changed_by") @db.Uuid
+  note       String?
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  report    Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  changedByUser User @relation(fields: [changedBy], references: [id])
+
+  @@index([reportId])
+  @@map("report_status_history")
+}
+
+model Ride {
+  id                   String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorId            String     @map("creator_id") @db.Uuid
+  sourceText           String     @map("source_text")
+  sourceLat            Decimal    @map("source_lat") @db.Decimal(9, 6)
+  sourceLng            Decimal    @map("source_lng") @db.Decimal(9, 6)
+  destText             String     @map("dest_text")
+  destLat              Decimal    @map("dest_lat") @db.Decimal(9, 6)
+  destLng              Decimal    @map("dest_lng") @db.Decimal(9, 6)
+  departureAt          DateTime   @map("departure_at") @db.Timestamptz
+  /// CHECK (seats_total BETWEEN 1 AND 3)
+  seatsTotal           Int        @map("seats_total") @db.SmallInt
+  /// CHECK (seats_taken <= seats_total AND seats_taken >= 0)
+  seatsTaken           Int        @default(0) @map("seats_taken") @db.SmallInt
+  /// CHECK (estimated_total_fare BETWEEN 10 AND 5000)
+  estimatedTotalFare   Int        @map("estimated_total_fare")
+  note                 String?
+  womenOnly            Boolean    @default(false) @map("women_only")
+  status               RideStatus @default(OPEN)
+  cancelReason         String?    @map("cancel_reason")
+  createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  creator      User              @relation(fields: [creatorId], references: [id])
+  requests     RideRequest[]
+  participants RideParticipant[]
+  messages     RideMessage[]
+
+  @@index([status, departureAt])
+  @@index([sourceLat, sourceLng])
+  @@index([destLat, destLng])
+  @@index([creatorId])
+  @@map("rides")
+}
+
+model RideRequest {
+  id         String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rideId     String            @map("ride_id") @db.Uuid
+  userId     String            @map("user_id") @db.Uuid
+  message    String?
+  status     RideRequestStatus @default(PENDING)
+  decidedAt  DateTime?         @map("decided_at") @db.Timestamptz
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([rideId, userId])
+  @@index([userId, status])
+  @@map("ride_requests")
+}
+
+model RideParticipant {
+  rideId   String    @map("ride_id") @db.Uuid
+  userId   String    @map("user_id") @db.Uuid
+  joinedAt DateTime  @default(now()) @map("joined_at") @db.Timestamptz
+  leftAt   DateTime? @map("left_at") @db.Timestamptz
+
+  ride Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([rideId, userId])
+  @@map("ride_participants")
+}
+
+model RideMessage {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  rideId    String   @map("ride_id") @db.Uuid
+  senderId  String   @map("sender_id") @db.Uuid
+  body      String   @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  ride   Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id])
+
+  @@index([rideId, createdAt])
+  @@map("ride_messages")
+}
+
+model Journey {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String        @map("user_id") @db.Uuid
+  emergencyContactId  String        @map("emergency_contact_id") @db.Uuid
+  destinationText     String        @map("destination_text")
+  destLat             Decimal?      @map("dest_lat") @db.Decimal(9, 6)
+  destLng             Decimal?      @map("dest_lng") @db.Decimal(9, 6)
+  startText           String?       @map("start_text")
+  notes               String?
+  startedAt           DateTime      @default(now()) @map("started_at") @db.Timestamptz
+  expectedArrivalAt   DateTime      @map("expected_arrival_at") @db.Timestamptz
+  extensionsUsed      Int           @default(0) @map("extensions_used") @db.SmallInt
+  status              JourneyStatus @default(ACTIVE)
+  overdueAt           DateTime?     @map("overdue_at") @db.Timestamptz
+  contactNotifiedAt   DateTime?     @map("contact_notified_at") @db.Timestamptz
+  completedAt         DateTime?     @map("completed_at") @db.Timestamptz
+  /// Only the hash is stored; the raw token lives in the cookie
+  trackTokenHash      String?       @unique @map("track_token_hash")
+  trackTokenExpiresAt DateTime?     @map("track_token_expires_at") @db.Timestamptz
+  escalationMinutes   Int           @default(30) @map("escalation_minutes")
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  user             User             @relation(fields: [userId], references: [id])
+  emergencyContact EmergencyContact @relation(fields: [emergencyContactId], references: [id])
+  events           JourneyEvent[]
+
+  // Partial UNIQUE index (user_id WHERE status IN ('ACTIVE','OVERDUE')) is applied
+  // via raw SQL in the migration; Prisma does not support partial indexes natively.
+  @@index([status, expectedArrivalAt])
+  @@index([userId])
+  @@map("journeys")
+}
+
+model JourneyEvent {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  journeyId String           @map("journey_id") @db.Uuid
+  type      JourneyEventType
+  meta      Json?
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@index([journeyId])
+  @@map("journey_events")
+}
+
+model Alert {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId         String        @map("author_id") @db.Uuid
+  category         AlertCategory
+  description      String
+  /// CHECK (latitude BETWEEN -90 AND 90)
+  latitude         Decimal       @db.Decimal(9, 6)
+  /// CHECK (longitude BETWEEN -180 AND 180)
+  longitude        Decimal       @db.Decimal(9, 6)
+  addressText      String?       @map("address_text")
+  photoUrl         String?       @map("photo_url")
+  status           AlertStatus   @default(ACTIVE)
+  isAnonymous      Boolean       @default(false) @map("is_anonymous")
+  confirmCount     Int           @default(0) @map("confirm_count")
+  disputeCount     Int           @default(0) @map("dispute_count")
+  needsReviewFirst Boolean       @default(false) @map("needs_review_first")
+  verifiedBy       String?       @map("verified_by") @db.Uuid
+  resolvedAt       DateTime?     @map("resolved_at") @db.Timestamptz
+  expiresAt        DateTime?     @map("expires_at") @db.Timestamptz
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  author    User         @relation(fields: [authorId], references: [id])
+  verifier  User?        @relation("VerifiedBy", fields: [verifiedBy], references: [id])
+  votes     AlertVote_[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([latitude, longitude])
+  @@index([authorId])
+  @@map("alerts")
+}
+
+model AlertVote_ {
+  alertId   String    @map("alert_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  vote      AlertVote
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@id([alertId, userId])
+  @@map("alert_votes")
+}
+
+model AlertSubscription {
+  userId       String          @id @map("user_id") @db.Uuid
+  enabled      Boolean         @default(true)
+  centerLat    Decimal         @map("center_lat") @db.Decimal(9, 6)
+  centerLng    Decimal         @map("center_lng") @db.Decimal(9, 6)
+  /// CHECK (radius_km BETWEEN 1 AND 10)
+  radiusKm     Decimal         @map("radius_km") @db.Decimal(4, 2)
+  /// stored as text[] of AlertCategory values
+  categories   AlertCategory[]
+  emailEnabled Boolean         @default(false) @map("email_enabled")
+  updatedAt    DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alert_subscriptions")
+}
+
+model Notification {
+  id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  type        NotificationType
+  title       String
+  body        String
+  link        String?
+  data        Json?
+  readAt      DateTime?        @map("read_at") @db.Timestamptz
+  emailSentAt DateTime?        @map("email_sent_at") @db.Timestamptz
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+model Flag {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reporterId     String        @map("reporter_id") @db.Uuid
+  targetType     FlagTargetType @map("target_type")
+  /// polymorphic; no DB-level FK — service layer enforces integrity
+  targetId       String        @map("target_id") @db.Uuid
+  reason         String        @db.VarChar(300)
+  status         FlagStatus    @default(OPEN)
+  resolvedBy     String?       @map("resolved_by") @db.Uuid
+  resolutionNote String?       @map("resolution_note")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  reporter User @relation(fields: [reporterId], references: [id])
+
+  @@unique([reporterId, targetType, targetId])
+  @@index([status, createdAt])
+  @@map("flags")
+}
+
+model ModerationAction {
+  id         String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorId    String               @map("actor_id") @db.Uuid
+  action     ModerationActionType
+  targetType String               @map("target_type")
+  targetId   String               @map("target_id") @db.Uuid
+  reason     String
+  meta       Json?
+  createdAt  DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  /// Append-only: no updatedAt, no deletedAt
+
+  actor User @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt(sort: Desc)])
+  @@map("moderation_actions")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     Json
+  updatedBy String?  @map("updated_by") @db.Uuid
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("system_settings")
+}

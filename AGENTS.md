@@ -1,9 +1,11 @@
 # SaferStreets Agent Rules
+
 Source of truth: docs/blueprint/ (index: docs/INDEX.md). Read ONLY the sections a task names.
 Stack: pnpm monorepo. apps/web = Next.js App Router + TS + Tailwind + shadcn/ui + TanStack Query + React Hook Form + Zod.
 apps/api = Express + TS + Prisma + PostgreSQL. packages/shared = Zod schemas, enums, types.
 
 Rules
+
 1. No mock data in shipped code. Real DB, real endpoints. Demo data only via the seed script.
 2. Every endpoint: Zod validation, requireAuth/RBAC, central error shape, rate limit (blueprint 07, 09).
 3. Every screen: skeleton loading, empty, error, success states. Mobile-first. WCAG 2.2 AA.

@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "12"
+
+jobs:
+  ci:
+    name: Typecheck · Lint · Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: saferstreets
+          POSTGRES_PASSWORD: saferstreets
+          POSTGRES_DB: saferstreets_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm approve-builds --all
+
+      - name: Check code formatting
+        run: pnpm format:check
+
+      - name: Build shared package
+        run: pnpm --filter @saferstreets/shared build
+
+      - name: Typecheck (all packages)
+        run: pnpm typecheck
+
+      - name: Lint (all packages)
+        run: pnpm lint
+
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: postgresql://saferstreets:saferstreets@localhost:5432/saferstreets_test
+
+      - name: Run migrations on test DB
+        working-directory: apps/api
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: postgresql://saferstreets:saferstreets@localhost:5432/saferstreets_test
+
+      - name: Run tests
+        working-directory: apps/api
+        run: pnpm test
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://saferstreets:saferstreets@localhost:5432/saferstreets_test
+          DATABASE_URL_TEST: postgresql://saferstreets:saferstreets@localhost:5432/saferstreets_test
+          SESSION_SECRET: ci-session-secret-at-least-32-chars-long
+          OTP_HMAC_SECRET: ci-otp-hmac-secret-at-least-32-chars-long
+          APP_URL: http://localhost:3000
+          API_URL: http://localhost:4000
