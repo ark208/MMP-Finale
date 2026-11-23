@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 245 43% 29%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 173 80% 40%;
+
+    --radius: 8px;
+
+    /* Brand & Module Colors */
+    --brand-deep: 245 43% 29%;
+    --brand-indigo: 243 75% 59%;
+    --brand-teal: 173 80% 40%;
+
+    --module-saferoute: 38 92% 50%;
+    --module-automate: 199 89% 48%;
+    --module-journeyguard: 262 83% 58%;
+    --module-safealert: 0 72% 51%;
+
+    --status-success: 142 71% 45%;
+    --status-warning: 38 92% 50%;
+    --status-danger: 0 72% 51%;
+    --status-info: 217 91% 60%;
+
+    --emergency: 0 72% 51%;
+    --emergency-glow: 0 72% 51%;
+  }
+
+  .dark {
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 18%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 173 80% 45%;
+
+    --brand-deep: 239 84% 67%;
+    --brand-indigo: 243 75% 65%;
+    --brand-teal: 173 80% 45%;
+
+    --module-saferoute: 38 92% 55%;
+    --module-automate: 199 89% 55%;
+    --module-journeyguard: 262 83% 65%;
+    --module-safealert: 0 72% 55%;
+
+    --status-success: 142 71% 45%;
+    --status-warning: 38 92% 50%;
+    --status-danger: 0 72% 55%;
+    --status-info: 217 91% 65%;
+
+    --emergency: 0 72% 51%;
+    --emergency-glow: 0 72% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight text-foreground font-semibold;
+  }
+}
+
+/* Custom scrollbar for Urban Night look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.45);
+}
+
+/* Accessibility: reduce motion when requested */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

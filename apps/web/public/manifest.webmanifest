@@ -1,0 +1,17 @@
+{
+  "name": "SaferStreets",
+  "short_name": "SaferStreets",
+  "description": "Safer Streets. Smarter Journeys. Stronger Communities.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0F19",
+  "theme_color": "#2F2A6B",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "48x48 72x72 96x96 128x128 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
